@@ -1,4 +1,4 @@
-# RUNX2-promotes-epigenetic-WNT-signaling-in-UC-epithelium
+# RUNX2 promotes epigenetic WNT signaling in inflamed intestinal epithelial cells
 Repository for the code for the analysis and creation of the figures on the paper "RUNX2 promotes epigenetic WNT signaling in UC epithelium"
 
 ## Abstract
