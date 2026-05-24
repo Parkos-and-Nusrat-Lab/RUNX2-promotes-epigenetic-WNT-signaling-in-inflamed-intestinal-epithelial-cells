@@ -2,6 +2,7 @@
 # Loading Librarires
 library(Seurat)
 library(tidyverse)
+library(grid)
 
 
 # Loading File
@@ -82,20 +83,6 @@ cowplot::ggsave2(filename = "Suppl_Fig_2.png", dpi = 300, plot=p, device = "png"
 genes <- c("CCL20","IFNA1","IFNB1","IFNG","IL1B","IL17A","IL17F","IL25","IL33","CXCL8","CCL3","TSLP","IL6","TNF")
 
 p <-DotPlot(seu, features = genes, dot.scale = 11)  +
-  theme(axis.text.x = element_text(angle = 90,vjust = 0.5, hjust=0.5, size = 12)) +
-  geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=0.5) +
-  xlab("") + ylab("")+
-  scale_color_viridis_c(option="magma") +
-  guides(size=guide_legend(override.aes=list(shape=21, colour="black", fill="white")))
-
-cowplot::ggsave2(filename = "Suppl_Fig_3_A.png", dpi = 300, plot=p, device = "png", bg = "white")
-
-
-
-
-genes <- c("CCL20","IFNA1","IFNB1","IFNG","IL1B","IL17A","IL17F","IL25","IL33","CXCL8","CCL3","TSLP","IL6","TNF")
-
-p <-DotPlot(seu, features = genes, dot.scale = 11)  +
   ggtitle("Cytokines") +
   theme(axis.text.x = element_text(angle = 90,vjust = 0.5, hjust=0.5, size = 12),
         plot.title = element_text(vjust = 0.5, size = 15, hjust = 0.5)) +
@@ -133,12 +120,12 @@ cowplot::ggsave2(filename = "Suppl_Fig_3_A.png", dpi = 300, plot=p, device = "pn
 
 
 
-genes <- c("CCL20","TNFAIP2","ANXA5","MARCKSL1","GP2","CCL15")
+genes <- c("CCL20","TNFAIP2","SLC2A6", "PTAFR","ICAM2","SPIB","GP2","FABP1","MUC17","CES2","ANXA5","MARCKSL1","CCL15")
 
 
 
 
-p<-DotPlot(seu, features = genes, dot.scale = 11)  +
+p<-DotPlot(seu, features = genes, dot.scale = 11,scale = F)  +
   ggtitle("M-cell markers") +
   theme(axis.text.x = element_text(angle = 90,vjust = 0.5, hjust=0.5, size = 12),
         plot.title = element_text(vjust = 0.5, size = 15, hjust = 0.5),
@@ -168,7 +155,7 @@ coord_cartesian(clip = "off") + # Removing the clipping so I can add things outs
                                           gp = gpar(fontface = "bold",
                                                     fontsize = 15)))
 
-
+p
 
 cowplot::ggsave2(filename = "Suppl_Fig_3_B.png", dpi = 300, plot=p, device = "png", bg = "white")
 
