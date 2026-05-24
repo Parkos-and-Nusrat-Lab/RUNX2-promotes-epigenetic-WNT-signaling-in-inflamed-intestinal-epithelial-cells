@@ -1,6 +1,7 @@
 # Doing motifs heatmap
 library(tidyverse)
 library(ggrepel)
+library(grid)
 
 # File obtained from the function plotEnrichHeatmap() with returnMatrix = TRUE
 
@@ -89,21 +90,15 @@ custom_colors <- c(
 
 # Removing all the names but the runx names for labeling purpose
 # Due to overlap labels are removed and added outside of R
-runx_genes <- c("RUNX1", "RUNX2", "RUNX3")
+uc_motifs <- c("RUNX1", "RUNX2", "RUNX3", "TCF3", "TCF4", "TCF12")
 
-# Making a dataframe to include the lines in the x axis
-label_df <- df %>%
-  filter(TF %in% runx_genes) %>%
-  distinct(TF) %>%
-  mutate(x = TF,         # reuse factor level
-         x_pos = as.numeric(factor(TF, levels = levels(df$TF))),  # numeric x
-         y_pos = 0.1,    # vertical label position (below axis)
-         y_seg_end = 0.5) # top of segment just below heatmap
 
 # Plotting
-# Due to overlap Runx x ticks were re-placed with text and line Grobs
+# Due to overlap Runx and TCF x ticks were re-placed with text and line Grobs
 # To visualize the position based on the df un-comment the sections
 # in the plot code below
+
+font_size = 7
 
 gg <- ggplot(df, aes(x = TF, y = Cell, fill = value)) +
   geom_tile(color = "darkgrey") +
@@ -115,12 +110,12 @@ gg <- ggplot(df, aes(x = TF, y = Cell, fill = value)) +
     guide = guide_colourbar(title.position = "top", title.hjust = 0.5)
   ) +
   scale_y_discrete(position = "right")+
-  #scale_x_discrete(labels = function(x) ifelse(x %in% runx_genes, x, "")) +
+  #scale_x_discrete(labels = function(x) ifelse(x %in% uc_motifs, x, "")) +
   theme_minimal() +
   theme(
-    axis.text.y = element_text(face = "bold", size = 12),
+    axis.text.y = element_text(face = "bold", size = 9),
     axis.text.x = element_blank(), # Comment this one if uncommenting the one below
-    #axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1.35, face = "bold", size = 11),
+    #axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1.35, face = "bold", size = 5),
     legend.title = element_text(size = 10, vjust = 1.8, hjust = 5, face = "bold"),
     legend.text = element_text(size = 12),
     legend.position = "top",
@@ -132,35 +127,60 @@ gg <- ggplot(df, aes(x = TF, y = Cell, fill = value)) +
   # Comment everything under here to remove manual re-labeling
   annotation_custom(grob = grid::textGrob("RUNX1", # Adding text
                                           x = 0.595,
-                                          y = -0.09,
+                                          y = -0.08,
                                           rot = 90,
                                           gp = gpar(fontface = "bold",
-                                                    fontsize = 9))) +
-  annotation_custom(grob = grid::textGrob("RUNX2", # Adding text
-                                          x = 0.65,
-                                          y = -0.09,
-                                          rot = 90,
-                                          gp = gpar(fontface = "bold",
-                                                    fontsize = 9))) +
-  annotation_custom(grob = grid::textGrob("RUNX3", # Adding text
-                                          x = 0.57,
-                                          y = -0.09,
-                                          rot = 90,
-                                          gp = gpar(fontface = "bold",
-                                                    fontsize = 9))) +
-  annotation_custom(grob = grid::linesGrob(x = c(0.57,0.5818), # Adding line
-                                           y  =c(-0.009, 0.01),
-                                           gp = gpar(lwd= unit(1, "pt"),  col = "black"))) +
+                                                    fontsize = font_size))) +
   annotation_custom(grob = grid::linesGrob(x = c(0.586, 0.5959), # Adding line
                                            y  =c(0.01, -0.009),
                                            gp = gpar(lwd= unit(1, "pt"),  col = "black"))) +
+  annotation_custom(grob = grid::textGrob("RUNX2", # Adding text
+                                          x = 0.65,
+                                          y = -0.08,
+                                          rot = 90,
+                                          gp = gpar(fontface = "bold",
+                                                    fontsize = font_size))) +
   annotation_custom(grob = grid::linesGrob(x = 0.6495, # Adding line
+                                           y  =c(-0.009, 0.01),
+                                           gp = gpar(lwd= unit(1, "pt"),  col = "black"))) +
+  annotation_custom(grob = grid::textGrob("RUNX3", # Adding text
+                                          x = 0.57,
+                                          y = -0.08,
+                                          rot = 90,
+                                          gp = gpar(fontface = "bold",
+                                                    fontsize = font_size))) +
+  annotation_custom(grob = grid::linesGrob(x = c(0.57,0.5818), # Adding line
+                                           y  =c(-0.009, 0.01),
+                                           gp = gpar(lwd= unit(1, "pt"),  col = "black"))) +
+  annotation_custom(grob = grid::textGrob("TCF3", # Adding text
+                                          x = 0.6933,
+                                          y = -0.065,
+                                          rot = 90,
+                                          gp = gpar(fontface = "bold",
+                                                    fontsize = font_size))) +
+  annotation_custom(grob = grid::linesGrob(x = 0.6933, # Adding line
+                                           y  =c(-0.009, 0.01),
+                                           gp = gpar(lwd= unit(1, "pt"),  col = "black"))) +
+  annotation_custom(grob = grid::textGrob("TCF12", # Adding text
+                                          x = 0.6155,
+                                          y = -0.075,
+                                          rot = 90,
+                                          gp = gpar(fontface = "bold",
+                                                    fontsize = font_size))) +
+  annotation_custom(grob = grid::linesGrob(x = c(0.6155,0.6255), # Adding line
+                                           y  =c(-0.009, 0.01),
+                                           gp = gpar(lwd= unit(1, "pt"),  col = "black"))) +
+  annotation_custom(grob = grid::textGrob("TCF4", # Adding text
+                                          x = 0.6325,
+                                          y = -0.065,
+                                          rot = 90,
+                                          gp = gpar(fontface = "bold",
+                                                    fontsize = font_size))) +
+  annotation_custom(grob = grid::linesGrob(x = 0.6325, # Adding line
                                            y  =c(-0.009, 0.01),
                                            gp = gpar(lwd= unit(1, "pt"),  col = "black")))
 
 
-# Seeing plot
-gg
 
 # Saving plot
 ggsave("Figure3E.png",

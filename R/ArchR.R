@@ -31,7 +31,7 @@ inputFiles2D <- c('2D_healthy1' = "/path/to/file/atac_fragments.tsv.gz",
 ArrowFiles2D <- createArrowFiles(
   inputFiles = inputFiles2D,
   sampleNames = names(inputFiles2D),
-  minTSS = 3, #Dont set this too high because you can always increase later
+  minTSS = 3, 
   minFrags = 1000,
   addTileMat = TRUE,
   addGeneScoreMat = TRUE, force = TRUE
@@ -41,7 +41,7 @@ ArrowFiles2D <- createArrowFiles(
 ArrowFiles3D <- createArrowFiles(
   inputFiles = inputFiles3D,
   sampleNames = names(inputFiles3D),
-  minTSS = 3, #Dont set this too high because you can always increase later
+  minTSS = 3, 
   minFrags = 1000,
   addTileMat = TRUE,
   addGeneScoreMat = TRUE, force = TRUE
@@ -52,30 +52,22 @@ ArrowFiles3D <- createArrowFiles(
 
 doubScores <- addDoubletScores(
   input = ArrowFiles2D,
-  k = 10, #Refers to how many cells near a "pseudo-doublet" to count.
-  knnMethod = "UMAP", #Refers to the embedding to use for nearest neighbor search with doublet projection.
+  k = 10,
+  knnMethod = "UMAP", 
   LSIMethod = 1,
 )
 doubScores <- addDoubletScores(
   input = ArrowFiles3D,
-  k = 10, #Refers to how many cells near a "pseudo-doublet" to count.
-  knnMethod = "UMAP", #Refers to the embedding to use for nearest neighbor search with doublet projection.
+  k = 10,
+  knnMethod = "UMAP", 
   LSIMethod = 1,
 )
 
 projCol <- ArchRProject(
   ArrowFiles = c(ArrowFiles2D,ArrowFiles3D),
   outputDirectory = "projCol",
-  copyArrows = TRUE #This is recommended so that if you modify the Arrow files you have an original copy for later usage.
+  copyArrows = TRUE
 )
-
-
-# Looking at the Memory Size
-paste0("Memory Size = ", round(object.size(projCol) / 10^6, 3), " MB")
-
-# Get available matrices and the TSS Enrichment quantile
-getAvailableMatrices(projCol)
-quantile(projCol$TSSEnrichment)
 
 # Extracting the names to save as metadata
 bioNames <- gsub("_healthy2|_healthy1|_UC1|_UC2","",projCol$Sample)
@@ -85,101 +77,22 @@ projCol$bioNames <- bioNames
 projCol$bioNames2 <- bioNames2
 
 
-# Plotting TSS vs Unique Fragments
-df <- getCellColData(projCol, select = c("log10(nFrags)", "TSSEnrichment"))
-df
-
-p <- ggPoint(
-  x = df[,1],
-  y = df[,2],
-  colorDensity = TRUE,
-  continuousSet = "sambaNight",
-  xlabel = "Log10 Unique Fragments",
-  ylabel = "TSS Enrichment",
-  xlim = c(log10(500), quantile(df[,1], probs = 0.99)),
-  ylim = c(0, quantile(df[,2], probs = 0.99))
-) + geom_hline(yintercept = 4, lty = "dashed") + geom_vline(xintercept = 3, lty = "dashed")
-
-p
-plotPDF(p, name = "TSS-vs-Frags.pdf", ArchRProj = projCol, addDOC = FALSE)
-
-# Plotting QC graphs
-p1 <- plotGroups(
-  ArchRProj = projCol,
-  groupBy = "Sample",
-  colorBy = "cellColData",
-  name = "TSSEnrichment",
-  plotAs = "ridges"
-)
-p1
-p2 <- plotGroups(
-  ArchRProj = projCol,
-  groupBy = "Sample",
-  colorBy = "cellColData",
-  name = "TSSEnrichment",
-  plotAs = "violin",
-  alpha = 0.4,
-  addBoxPlot = TRUE
-)
-p2
-p3 <- plotGroups(
-  ArchRProj = projCol,
-  groupBy = "Sample",
-  colorBy = "cellColData",
-  name = "log10(nFrags)",
-  plotAs = "ridges"
-)
-p3
-p4 <- plotGroups(
-  ArchRProj = projCol,
-  groupBy = "Sample",
-  colorBy = "cellColData",
-  name = "log10(nFrags)",
-  plotAs = "violin",
-  alpha = 0.4,
-  addBoxPlot = TRUE
-)
-p4
-plotPDF(p1,p2,p3,p4, name = "QC-Sample-Statistics.pdf", ArchRProj = projCol, addDOC = FALSE, width = 4, height = 4)
-
 # SAving ArchR Project
 saveArchRProject(ArchRProj = projCol, outputDirectory = "projCol", load = FALSE)
 
 # Performing QC filtering TSS Enrichment
-
 idxPass <- which(projCol$TSSEnrichment >= 5)
 cellsPass <- projCol$cellNames[idxPass]
-projCol[cellsPass, ]
-
-# Making a new object to perserve the full object
 projCol2 <- filterDoublets(projCol[cellsPass, ]) #pass to second project
-
-# Verifying the post filtering outcome
-p1 <- plotFragmentSizes(ArchRProj = projCol[cellsPass, ])
-p1
-p2 <- plotTSSEnrichment(ArchRProj = projCol[cellsPass, ])
-p2
-p3 <- plotGroups(
-  ArchRProj = projCol[cellsPass, ],
-  groupBy = "Sample",
-  colorBy = "cellColData",
-  name = "TSSEnrichment",
-  plotAs = "violin",
-  alpha = 0.4,
-  addBoxPlot = TRUE
-)
-p3
-
 ###################################LSI#############################
 
-
-# Perfomring LSI
+# Performing LSI
 projCol2 <- addIterativeLSI(
   ArchRProj = projCol2,
   useMatrix = "TileMatrix",
   name = "IterativeLSI",
   iterations = 10,
-  clusterParams = list( #See Seurat::FindClusters
+  clusterParams = list(
     resolution = 0.8,
     sampleCells = 10000,
     n.start = 10
@@ -189,27 +102,59 @@ projCol2 <- addIterativeLSI(
 )
 
 #Harmony batch correction
-projCol2 <- addHarmony(ArchRProj = projCol2,reducedDims = "IterativeLSI", force = TRUE, name = "Harmony",groupBy = "bioNames2")
+projCol2 <- addHarmony(ArchRProj = projCol2,
+                       reducedDims = "IterativeLSI",
+                       force = TRUE, 
+                       name = "Harmony",
+                       groupBy = "bioNames2")
 
 #Adding clusters
-projCol2 <- addClusters(input = projCol2,reducedDims = "IterativeLSI",force = TRUE, method = "Seurat",name = "Clusters",resolution = 0.8)
+projCol2 <- addClusters(input = projCol2,
+                        reducedDims = "IterativeLSI",
+                        force = TRUE, 
+                        method = "Seurat",
+                        name = "Clusters",
+                        resolution = 0.8)
 
 #UMAP
-projCol2 <- addUMAP(ArchRProj = projCol2, reducedDims = "IterativeLSI",force = TRUE,  name = "UMAP", nNeighbors = 30, minDist = 0.5, metric = "cosine")
+projCol2 <- addUMAP(ArchRProj = projCol2,
+                    reducedDims = "IterativeLSI",
+                    force = TRUE,  
+                    name = "UMAP", 
+                    nNeighbors = 30, 
+                    minDist = 0.5, 
+                    metric = "cosine")
 
 #UMAP harmony
-projCol2 <- addUMAP(ArchRProj = projCol2, reducedDims = "Harmony", force = TRUE, name = "UMAPHarmony", nNeighbors = 30, minDist = 0.5, metric = "cosine")
+projCol2 <- addUMAP(ArchRProj = projCol2, 
+                    reducedDims = "Harmony", 
+                    force = TRUE, 
+                    name = "UMAPHarmony", 
+                    nNeighbors = 30, 
+                    minDist = 0.5,
+                    metric = "cosine")
 
 #Adding clusters
-projCol2 <- addClusters(input = projCol2,reducedDims = "Harmony",force = TRUE, method = "Seurat",name = "HarmonyClusters",resolution = 0.8)
+projCol2 <- addClusters(input = projCol2,
+                        reducedDims = "Harmony",
+                        force = TRUE, 
+                        method = "Seurat",
+                        name = "HarmonyClusters",
+                        resolution = 0.8)
 
 
 # Plotting
-p1 <- plotEmbedding(ArchRProj = projCol2, colorBy = "cellColData", name = "HarmonyClusters", embedding = "UMAPHarmony")
-p2 <- plotEmbedding(ArchRProj = projCol2, colorBy = "cellColData", name = "bioNames2", embedding = "UMAPHarmony")
+p1 <- plotEmbedding(ArchRProj = projCol2, 
+                    colorBy = "cellColData", 
+                    name = "HarmonyClusters", 
+                    embedding = "UMAPHarmony")
+p2 <- plotEmbedding(ArchRProj = projCol2, 
+                    colorBy = "cellColData", 
+                    name = "bioNames2", 
+                    embedding = "UMAPHarmony")
 ggAlignPlots(p1, p2, type = "h")
-plotPDF(p1,p2, name = "Plot-HarmonyUMAP-Sample-Clusters.pdf", ArchRProj = projCol2, addDOC = TRUE, width = 10, height = 5)
-
+plotPDF(p1,p2, name = "Plot-HarmonyUMAP-Sample-Clusters.pdf", 
+        ArchRProj = projCol2, addDOC = TRUE, width = 10, height = 5)
 
 #######Looking at markers of differentiation######
 markersGS <- getMarkerFeatures(
@@ -219,17 +164,16 @@ markersGS <- getMarkerFeatures(
   bias = c("TSSEnrichment", "log10(nFrags)"),
   testMethod = "wilcoxon"
 )
-markerList <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= 1.25")
 markerGenes <- c(
-  "LGR5", "BMI1", #Early Progenitor
-  "MUC2", "REG4", #Goblet
-  "TNFAIP2", #M cells
-  "ITPR2", #cycling TA
+  "LGR5", "BMI1",
+  "MUC2", "REG4",
+  "TNFAIP2",
+  "ITPR2",
   "CHGA","LYZ",
-  "MKI67",#undifferentiated
-  "HES1", #secretory (goblet, enteroendocrine and paneth) and absorptive progenitor factors
-  "KRT8",  #epithelial cells
-  "CDH17", "GPA33", "KRT20", #distal enterocytes
+  "MKI67",
+  "HES1", 
+  "KRT8", 
+  "CDH17", "GPA33", "KRT20", 
   "THBS2", "THBS1"
 )
 
@@ -301,57 +245,57 @@ projCol2 <- addModuleScore(projCol2,
                                useMatrix = "GeneScoreMatrix",
                                name = "Module",
                                features = features)
-#########################ARCHR BROWSER########################################
-ArchRBrowser(projCol2)
 ###################################PREP RNA DATASET###########################
-scRNA_I_test <- scRNA_I
-DimPlot(scRNA_I_test)
+scRNA_I_test <- read_rds("Path/to/scRNAseq/file/withcluster.rds")
 Idents(scRNA_I_test) <- "seurat_clusters"
-new.cluster.ids <- c('0' = "Transitional_2D",'1' = "Differentiated_3D",'2'="Differentiated_2D",'3'="Intermediate_3D",
-                     '4'= "Intermediate_2D",'5'="Progenitor_2D",'6'="Progenitor_3D",'7'="Undifferentiated_2D",'8'="M_like",
-                     '9'="UC_specific",'10'="HES1_progenitor")
+new.cluster.ids <- c('0' = "Transitional_2D",
+                     '1' = "Differentiated_3D",
+                     '2'="Differentiated_2D",
+                     '3'="Intermediate_3D",
+                     '4'= "Intermediate_2D",
+                     '5'="Progenitor_2D",
+                     '6'="Progenitor_3D",
+                     '7'="Undifferentiated_2D",
+                     '8'="M_like",
+                     '9'="UC_specific",
+                     '10'="HES1_progenitor")
 scRNA_I_test <- RenameIdents(scRNA_I_test,new.cluster.ids)
-DimPlot(scRNA_I_test,label=TRUE,repel=TRUE)
-levels(scRNA_I_test)
 scRNA_I_test$seurat_clusters <- Idents(scRNA_I_test)
-DimPlot(scRNA_I_test,label=TRUE,repel=TRUE, label.box = TRUE)
-
 ######################CONSTRAINED INTEGRATION#################################
-clustDiff_2D <- paste0(paste0("C",6)) #CREATE GROUP based on ATAC clusters
+clustDiff_2D <- paste0(paste0("C",6)) 
 clustDiff_3D <- paste0(paste0("C",3))
 clustHes <- paste0(paste0("C",13))
-clustIntermediate_2D <- paste0(c(paste0("C", 7:9),paste0("C", 14))) #CREATE GROUP based on ATAC clusters
+clustIntermediate_2D <- paste0(c(paste0("C", 7:9),paste0("C", 14))) 
 clustIntermediate_3D <- paste0((paste0("C", 1:2)))
-clustMcell <- paste0(paste0("C",10)) #CREATE GROUP based on ATAC clusters
+clustMcell <- paste0(paste0("C",10)) 
 clustProg_2D <- paste0(paste0("C",11))
-clustUndiff_2D <- paste0(paste0("C",15)) #CREATE GROUP based on ATAC clusters
+clustUndiff_2D <- paste0(paste0("C",15))
 clustProg_3D <- paste0(paste0("C",12))
-clustTransitional <- paste0(paste0("C",5)) #CREATE GROUP based on ATAC clusters
+clustTransitional <- paste0(paste0("C",5))
 clustUC <- paste0(paste0("C",4))
 
-rnaDiff_2D <- CellsByIdentities(scRNA_I_test, idents = 'Differentiated_2D')
-rnaDiff_3D <- CellsByIdentities(scRNA_I_test, idents = 'Differentiated_3D')
-rnaHes <- CellsByIdentities(scRNA_I_test, idents = 'HES1_progenitor')
-rnaIntermediate_2D <- CellsByIdentities(scRNA_I_test, idents = 'Intermediate_2D')
-rnaIntermediate_3D <- CellsByIdentities(scRNA_I_test, idents = 'Intermediate_3D')
-rnaMcell <- CellsByIdentities(scRNA_I_test, idents = 'M_like')
-rnaProg_2D <- CellsByIdentities(scRNA_I_test, idents = 'Progenitor_2D')
-rnaUndiff_2D <- CellsByIdentities(scRNA_I_test, idents = 'Undifferentiated_2D')
-rnaProg_3D <- CellsByIdentities(scRNA_I_test, idents = 'Progenitor_3D')
-rnaTransitional <- CellsByIdentities(scRNA_I_test, idents = 'Transitional_2D')
-rnaUC <- CellsByIdentities(scRNA_I_test, idents = 'UC_specific')
-
-rnaDiff_2D <- as.character(unlist(rnaDiff_2D))
-rnaDiff_3D <- as.character(unlist(rnaDiff_3D))
-rnaHes <- as.character(unlist(rnaHes))
-rnaIntermediate_2D <- as.character(unlist(rnaIntermediate_2D))
-rnaIntermediate_3D <- as.character(unlist(rnaIntermediate_3D))
-rnaMcell <- as.character(unlist(rnaMcell))
-rnaProg_2D <- as.character(unlist(rnaProg_2D))
-rnaUndiff_2D <- as.character(unlist(rnaUndiff_2D))
-rnaProg_3D <- as.character(unlist(rnaProg_3D))
-rnaTransitional <- as.character(unlist(rnaTransitional))
-rnaUC <- as.character(unlist(rnaUC))
+rnaDiff_2D <- CellsByIdentities(scRNA_I_test, idents = 'Differentiated_2D') %>% 
+  unlist() %>% as.character()
+rnaDiff_3D <- CellsByIdentities(scRNA_I_test, idents = 'Differentiated_3D') %>% 
+  unlist() %>% as.character()
+rnaHes <- CellsByIdentities(scRNA_I_test, idents = 'HES1_progenitor') %>% 
+  unlist() %>% as.character()
+rnaIntermediate_2D <- CellsByIdentities(scRNA_I_test, idents = 'Intermediate_2D') %>% 
+  unlist() %>% as.character()
+rnaIntermediate_3D <- CellsByIdentities(scRNA_I_test, idents = 'Intermediate_3D') %>% 
+  unlist() %>% as.character()
+rnaMcell <- CellsByIdentities(scRNA_I_test, idents = 'M_like') %>% 
+  unlist() %>% as.character()
+rnaProg_2D <- CellsByIdentities(scRNA_I_test, idents = 'Progenitor_2D') %>% 
+  unlist() %>% as.character()
+rnaUndiff_2D <- CellsByIdentities(scRNA_I_test, idents = 'Undifferentiated_2D') %>% 
+  unlist() %>% as.character()
+rnaProg_3D <- CellsByIdentities(scRNA_I_test, idents = 'Progenitor_3D') %>% 
+  unlist() %>% as.character()
+rnaTransitional <- CellsByIdentities(scRNA_I_test, idents = 'Transitional_2D') %>% 
+  unlist() %>% as.character()
+rnaUC <- CellsByIdentities(scRNA_I_test, idents = 'UC_specific') %>% 
+  unlist() %>% as.character()
 
 groupList <- SimpleList(
   Differentiated_2D = SimpleList(ATAC = projCol2$cellNames[projCol2$HarmonyClusters %in% clustDiff_2D], RNA = rnaDiff_2D),
@@ -374,19 +318,6 @@ projCol2 <- addGeneIntegrationMatrix(
   matrixName = "GeneIntegrationMatrix",
   reducedDims = "Harmony",
   seRNA = scRNA_I_test,
-  addToArrow = FALSE,
-  groupList = groupList,
-  groupRNA = "seurat_clusters",
-  nameCell = "predictedCell_Co",
-  nameGroup = "predictedGroup_Co",
-  nameScore = "predictedScore_Co"
-)
-projCol2 <- addGeneIntegrationMatrix(
-  ArchRProj = projCol2,
-  useMatrix = "GeneScoreMatrix",
-  matrixName = "GeneIntegrationMatrix",
-  reducedDims = "Harmony",
-  seRNA = scRNA_I_test,
   addToArrow = TRUE,
   force= TRUE,
   groupList = groupList,
@@ -396,10 +327,6 @@ projCol2 <- addGeneIntegrationMatrix(
   nameScore = "predictedScore"
 )
 
-p1 <- plotEmbedding(ArchRProj = projCol2, colorBy = "cellColData", name = "Sample", embedding = "UMAPHarmony")
-p2 <- plotEmbedding(ArchRProj = projCol2, colorBy = "cellColData", name = "predictedGroup", embedding = "UMAPHarmony")
-
-projCol2 <- saveArchRProject(ArchRProj = projCol2, outputDirectory = "Save-projCol2", load = TRUE)
 projCol2 <- addImputeWeights(projCol2)
 p1 <- plotEmbedding(
   ArchRProj = projCol2,
@@ -479,7 +406,6 @@ markerPeaks <- getMarkerFeatures(
   #bias = c("TSSEnrichment", "log10(nFrags)"),
   testMethod = "wilcoxon"
 )
-markerList <- getMarkers(markerPeaks, cutOff = "FDR <= 0.1 & Log2FC >= 0.5")
 heatmapPeaks <- markerHeatmap(
   seMarker = markerPeaks,
   cutOff = "FDR <= 0.1 & Log2FC >= 0.5",
@@ -488,7 +414,6 @@ heatmapPeaks <- markerHeatmap(
 draw(heatmapPeaks, heatmap_legend_side = "bot", annotation_legend_side = "bot")
 ###################################Motifs##################################
 projCol2 <- addMotifAnnotations(ArchRProj = projCol2, force = TRUE, motifSet = "cisbp", name = "Motif")
-#markerPeaks <- getMarkerFeatures(ArchRProj = projCol2, #test with BinomialuseMatrix = "PeakMatrix", groupBy = "predictedGroup",bias = c("TSSEnrichment", "log10(nFrags)"),testMethod = "Binomial",binarize = TRUE)
 enrichMotifs <- peakAnnoEnrichment(
   seMarker = markerPeaks,
   ArchRProj = projCol2,
@@ -518,7 +443,7 @@ pSet$name <- paste(seqnames(pSet), start(pSet), end(pSet), sep = "_")
 matches <- getMatches(ArchRProj = projCol2, name = "Motif")
 rownames(matches) <- paste(seqnames(matches), start(matches), end(matches), sep = "_")
 matches <- matches[pSet$name]
-gr <- GRanges(seqnames = c("chr8"), ranges = IRanges(start = c(12166000), end = c(12169991))) #should be promoter peak for this analysis
+gr <- GRanges(seqnames = c("chr8"), ranges = IRanges(start = c(12166000), end = c(12169991))) 
 queryHits <- queryHits(findOverlaps(query = pSet, subject = gr, type = "within"))
 colnames(matches)[which(assay(matches[queryHits,]))]
 
@@ -536,3 +461,7 @@ colSums(ppm) %>% range
 
 ggseqlogo(ppm, method = "bits")
 ggseqlogo(ppm, method = "prob")
+
+
+projCol2 <- saveArchRProject(ArchRProj = projCol2, outputDirectory = "Save-projCol2", load = TRUE)
+
